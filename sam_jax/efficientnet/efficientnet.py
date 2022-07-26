@@ -21,7 +21,7 @@ from typing import Any, Optional, Tuple, Union
 from absl import flags
 from absl import logging
 import flax
-from flax import nn
+from flax import linen as nn
 import jax
 from jax import numpy as jnp
 import tensorflow as tf
@@ -64,7 +64,7 @@ dense_kernel_init_fn = jax.nn.initializers.variance_scaling(
     1 / 3.0, 'fan_out', 'uniform')
 
 
-class DepthwiseConv(flax.nn.Module):
+class DepthwiseConv(flax.linen.Module):
   """Depthwise convolution that matches tensorflow's conventions.
 
   In Tensorflow, the shapes of depthwise kernels don't match the shapes of a
@@ -85,8 +85,8 @@ class DepthwiseConv(flax.nn.Module):
             bias: bool = True,
             dtype: jnp.dtype = jnp.float32,
             precision=None,
-            kernel_init=flax.nn.initializers.lecun_normal(),
-            bias_init=flax.nn.initializers.zeros) -> jnp.ndarray:
+            kernel_init=flax.linen.initializers.lecun_normal(),
+            bias_init=flax.linen.initializers.zeros) -> jnp.ndarray:
     """Applies a convolution to the inputs.
 
     Args:
@@ -131,7 +131,7 @@ class DepthwiseConv(flax.nn.Module):
     # Need to transpose to convert tensorflow-shaped kernel to lax-shaped kernel
     kernel = jnp.transpose(kernel, [0, 1, 3, 2])
 
-    dimension_numbers = flax.nn.linear._conv_dimension_numbers(inputs.shape)  # pylint:disable=protected-access
+    dimension_numbers = flax.linen.linear._conv_dimension_numbers(inputs.shape)  # pylint:disable=protected-access
 
     y = jax.lax.conv_general_dilated(
         inputs,
@@ -290,7 +290,7 @@ def conv2d(inputs: tf.Tensor,
   Returns:
     The output of the convolutional layer.
   """
-  conv_fn = DepthwiseConv if depthwise else flax.nn.Conv
+  conv_fn = DepthwiseConv if depthwise else flax.linen.Conv
   kernel_size = ((kernel_size, kernel_size)
                  if isinstance(kernel_size, int) else tuple(kernel_size))
   conv_name = conv_name if conv_name else 'conv2d'
@@ -316,7 +316,7 @@ def conv2d(inputs: tf.Tensor,
         axis_name='batch')
 
   if activation is not None:
-    x = getattr(flax.nn.activation, activation.lower())(x)
+    x = getattr(flax.linen.activation, activation.lower())(x)
   return x
 
 
@@ -342,7 +342,7 @@ def stochastic_depth(inputs: jnp.ndarray,
     return inputs
 
   if rng is None:
-    rng = flax.nn.make_rng()
+    rng = flax.linen.make_rng()
   mask_shape = [inputs.shape[0]]+ [1 for _ in inputs.shape[1:]]
   mask = jax.random.bernoulli(rng, p=survival_probability, shape=mask_shape)
   mask = jnp.tile(mask, [1] + list(inputs.shape[1:]))
@@ -350,7 +350,7 @@ def stochastic_depth(inputs: jnp.ndarray,
                         jnp.zeros_like(inputs))
 
 
-class SqueezeExcite(flax.nn.Module):
+class SqueezeExcite(flax.linen.Module):
   """SqueezeExite block (see paper for more details.)"""
 
   def apply(self,
@@ -374,7 +374,7 @@ class SqueezeExcite(flax.nn.Module):
     conv_index = 0
     num_reduced_filters = max(1, int(block.input_filters * block.se_ratio))
 
-    se = flax.nn.avg_pool(x, x.shape[1:3])
+    se = flax.linen.avg_pool(x, x.shape[1:3])
     se = conv2d(
         se,
         num_reduced_filters,
@@ -400,7 +400,7 @@ class SqueezeExcite(flax.nn.Module):
     return x
 
 
-class MBConvBlock(flax.nn.Module):
+class MBConvBlock(flax.linen.Module):
   """Main building component of Efficientnet."""
 
   def apply(self,
@@ -500,7 +500,7 @@ class MBConvBlock(flax.nn.Module):
     return x
 
 
-class Stem(flax.nn.Module):
+class Stem(flax.linen.Module):
   """Initial block of Efficientnet."""
 
   def apply(self,
@@ -532,7 +532,7 @@ class Stem(flax.nn.Module):
     return x
 
 
-class Head(flax.nn.Module):
+class Head(flax.linen.Module):
   """Final block of Efficientnet."""
 
   def apply(self,
@@ -557,16 +557,16 @@ class Head(flax.nn.Module):
         train=train)
 
     # Build classifier
-    x = flax.nn.avg_pool(x, x.shape[1:3])
+    x = flax.linen.avg_pool(x, x.shape[1:3])
     if config.dropout_rate and config.dropout_rate > 0:
-      x = flax.nn.dropout(x, config.dropout_rate, deterministic=not train)
-    x = flax.nn.Dense(
+      x = flax.linen.dropout(x, config.dropout_rate, deterministic=not train)
+    x = flax.linen.Dense(
         x, num_classes, kernel_init=dense_kernel_init_fn, name='dense')
     x = x.reshape([x.shape[0], -1])
     return x
 
 
-class EfficientNet(flax.nn.Module):
+class EfficientNet(flax.linen.Module):
   """Implements EfficientNet model."""
 
   def apply(self,

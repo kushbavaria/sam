@@ -19,7 +19,7 @@ https://github.com/google/flax/blob/master/examples/imagenet/resnet_v1.py
 """
 
 
-from flax import nn
+from flax import linen as nn
 
 import jax.numpy as jnp
 

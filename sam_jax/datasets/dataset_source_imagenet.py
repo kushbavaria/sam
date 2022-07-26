@@ -23,8 +23,8 @@ from typing import Dict, Tuple
 from absl import flags
 from absl import logging
 import jax
-from sam.autoaugment import autoaugment
-from sam.sam_jax.datasets import dataset_source
+from autoaugment import autoaugment
+from sam_jax.datasets import dataset_source
 import tensorflow as tf
 import tensorflow_datasets as tfds
 import tensorflow_probability as tfp

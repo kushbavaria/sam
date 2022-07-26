@@ -20,7 +20,7 @@ from typing import Callable, Dict, Optional
 from absl import flags
 from absl import logging
 import jax
-from sam.sam_jax.datasets import augmentation
+from sam_jax.datasets import augmentation
 import tensorflow as tf
 import tensorflow_datasets as tfds
 

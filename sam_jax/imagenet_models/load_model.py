@@ -23,8 +23,8 @@ import jax
 from jax import numpy as jnp
 from jax import random
 
-from sam.sam_jax.efficientnet import efficientnet
-from sam.sam_jax.imagenet_models import resnet
+from sam_jax.efficientnet import efficientnet
+from sam_jax.imagenet_models import resnet
 
 
 FLAGS = flags.FLAGS

@@ -45,7 +45,7 @@ from typing import Tuple
 from flax import nn
 import jax.numpy as jnp
 
-from sam.sam_jax.models import utils
+from sam_jax.models import utils
 
 
 def _shortcut(x: jnp.ndarray, chn_out: int, strides: Tuple[int, int]
